@@ -29,11 +29,11 @@ for line in doc:
 
     while i < len(line):
         for num, spelled_num in d.items():
-            if i+len(spelled_num) <= len(line):
-                if line[i:i+len(spelled_num)] == spelled_num:
-                    updated_line.append(str(num))
-                    i+= len(spelled_num)-1
-                    matched = True
+            # if i+len(spelled_num) <= len(line):
+            if line[i:i+len(spelled_num)] == spelled_num:
+                updated_line.append(str(num))
+                i+= len(spelled_num)-1
+                matched = True
                 
         if matched:
             matched = False
@@ -41,15 +41,11 @@ for line in doc:
             updated_line.append(line[i])
             i+=1
 
-        
-                
-        
-    
-    print(''.join(updated_line))
+    # print(''.join(updated_line))
     nums_in_line = [int(char) for char in updated_line if char.isnumeric()]
     
     calibration_values.append(int(str(nums_in_line[0]) + str(nums_in_line[-1])))
-print(calibration_values)
+# print(calibration_values)
 print(f"Part 2: {sum(calibration_values)}")
 
 # 54251 too high - had to change eighthree to 83 not 8hree
