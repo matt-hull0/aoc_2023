@@ -45,19 +45,15 @@ grid = generate_grid(x_dim, y_dim, puzzle_input)
 
 total = 0
 
-for y, row in enumerate(grid[1:-1], start=1):
+for y, row in enumerate(grid, start=0):
     number_str = ""
     found_new_num = False
     surrounded_by_symbol = False
-    for x, char in enumerate(row[1:-1], start=1):
+    for x, char in enumerate(row, start=0):
         if char.isnumeric():
             number_str += char
             if not surrounded_by_symbol:
                 surrounded_by_symbol = check_if_surrounded_by_symbol(x, y, grid)
-            # BUG - deal with end of line...!
-            if x == x_dim and surrounded_by_symbol:
-                number_found = int(number_str)
-                total += number_found
 
         elif len(number_str) > 0:
             # print(f"found num {number_str}, surrounded - {surrounded_by_symbol}")
