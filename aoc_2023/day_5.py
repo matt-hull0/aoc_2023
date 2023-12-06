@@ -28,7 +28,7 @@ for para in paragraphs[1:]:
 
 
 # print(seeds_list)
-print(maps)
+# print(maps)
 
 
 def parse_map(source: int, map: list[dict[str, int]]) -> int:
@@ -53,11 +53,11 @@ while key in maps.keys():
 
     key = next_key
 
-print(seeds_list)
+# print(seeds_list)
 
 # find closest:
 
-print(sorted(seeds_list, key=lambda x: x["location"])[0]["location"])
+# print(sorted(seeds_list, key=lambda x: x["location"])[0]["location"])
 
 
 # --------------------------------------------------------------#
@@ -145,6 +145,9 @@ from typing import Tuple
 def parse_range_through_map(
     input_range: Tuple[int, int], map: dict[str, int]
 ) -> list[Tuple[int, int]]:
+    if len(input_range) == 0:
+        return [], []
+
     map_start = map["source_range_start"]
     map_end = map["source_range_start"] + map["range_length"] - 1
 
@@ -155,13 +158,15 @@ def parse_range_through_map(
         assert input_range[0] > map_end
         assert input_range[1] > map_start
         assert input_range[1] > map_end
-        return [input_range]
+        parsed = []
+        to_parse = input_range
     elif input_range[1] < map_start:
         assert input_range[0] < map_start
         assert input_range[0] < map_end
         assert input_range[1] < map_start
         assert input_range[1] < map_end
-        return [input_range]
+        parsed = [input_range]
+        to_parse = ()
 
     elif input_range[0] >= map_start:
         if input_range[1] <= map_end:
@@ -169,57 +174,61 @@ def parse_range_through_map(
             assert input_range[0] < map_end
             assert input_range[1] > map_start
             assert input_range[1] <= map_end
-            return [(input_range[0] + map_diff, input_range[1] + map_diff)]
-
+            parsed = [(input_range[0] + map_diff, input_range[1] + map_diff)]
+            to_parse = ()
         else:
             assert input_range[0] >= map_start
-            assert input_range[0] < map_end
+            assert input_range[0] <= map_end
             assert input_range[1] > map_start
             assert input_range[1] > map_end
-            return [
+            parsed = [
                 (input_range[0] + map_diff, map_end + map_diff),
-                (map_end + 1, input_range[1]),
             ]
+            to_parse = (map_end + 1, input_range[1])
 
     elif map_end >= input_range[1]:
         assert input_range[0] < map_start
         assert input_range[0] < map_end
         assert input_range[1] >= map_start
         assert input_range[1] <= map_end
-        return [
-            (input_range[0], map_start - 1),
-            (map_start + map_diff, input_range[1] + map_diff),
-        ]
+        parsed = [(input_range[0], map_start - 1)]
+        to_parse = (map_start + map_diff, input_range[1] + map_diff)
 
     else:
         assert input_range[0] < map_start
         assert input_range[0] < map_end
         assert input_range[1] > map_start
         assert input_range[1] > map_end
-        return [
+        parsed = [
             (input_range[0], map_start - 1),
             (map_start + map_diff, map_end + map_diff),
-            (map_end + 1, input_range[1]),
         ]
+        to_parse = (map_end + 1, input_range[1])
+
+    to_parse_r_len = (to_parse[1] - to_parse[0] + 1) if len(to_parse) == 2 else 0
+    assert (input_range[1] - input_range[0] + 1) == sum(
+        [r[1] - r[0] + 1 for r in parsed]
+    ) + to_parse_r_len
+    # parsed = sorted(parsed, key=lambda x: x[0])
+    return parsed, to_parse
 
 
 def parse_ranges_through_map(ranges_list, map_list):
     ranges_list = ranges_list.copy()
     new_ranges_list = []
     for range_row in ranges_list:
-        new_range_row = [range_row]
-
+        range_to_parse = range_row
+        new_range_row = []
         for map_row in sorted(map_list, key=lambda x: x["source_range_start"]):
-            range_to_parse = new_range_row.pop()
-
-            parsed_range = parse_range_through_map(range_to_parse, map_row)
-
-            assert (range_to_parse[1] - range_to_parse[0] + 1) == sum(
-                [r[1] - r[0] + 1 for r in parsed_range]
+            parsed_range, range_to_parse = parse_range_through_map(
+                range_to_parse, map_row
             )
 
             new_range_row += parsed_range
         new_ranges_list += new_range_row
+        if range_to_parse:
+            new_ranges_list += [range_to_parse]
+    new_ranges_list = sorted(new_ranges_list, key=lambda x: x[0])
     return new_ranges_list
 
 
@@ -231,6 +240,7 @@ def parse_seed_range(seed_start_num: int, seed_range: int):
     while key in maps.keys():
         next_key = maps[key]["destination_key"]
         ranges_list = parse_ranges_through_map(ranges_list, maps[key]["mappings"])
+        # ranges_list = sorted(ranges_list, key=lambda x: x[0])
         key = next_key
         print(f"{key=}")
         print(f"{ranges_list=}")
@@ -245,9 +255,12 @@ for seed_start_num, seed_range in zip(seeds_int_list[::2], seeds_int_list[1::2])
     )[0][0]
     nearest_location = (
         min(nearest_location, nearest_seed_range_location)
-        if nearest_location
+        if nearest_location is not None
         else nearest_seed_range_location
     )
-
+    print(nearest_location)
+print("---")
 print(nearest_location)
 # 276959229 too high
+
+# cheating should b 2520479?
