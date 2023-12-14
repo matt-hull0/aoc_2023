@@ -168,7 +168,7 @@ for i, (record, check) in enumerate(lines, 1):
 
 print(f"Part 1: {ans=}")
 
-
+memory={}`                                   `
 # Part 2
 ans = 0
 for i, (record, check) in enumerate(lines, 1):
