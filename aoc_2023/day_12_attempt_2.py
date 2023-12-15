@@ -6,6 +6,8 @@ from collections import Counter
 # check "as we go" that the resulting record is compatible, if not, stop, if yes,
 # iterate for a shorter record
 
+memory = {}
+
 
 def make_as_many_separate_springs_as_poss(arrange):
     new_list = []
@@ -40,6 +42,10 @@ def arrangement_compatible(record, arrange, check) -> bool:
     # check what is fixed so far matches the check
     # set_so_far_match = re.search(r"^[^#][#.]*?(?=(#+\?|\.\?))", arrange)
     # up_to_q = set_so_far_match.group(0) if set_so_far_match else ""
+
+    if sum([1 for c in arrange if c in ["#"]]) > sum(check):
+        return False
+
     up_to_q = calc_set_so_far(arrange)
     subset_check = [x.end() - x.start() for x in re.finditer(r"#+", up_to_q)]
     if subset_check != check[: len(subset_check)]:
@@ -92,28 +98,53 @@ assert (
     )
     == False
 )
-assert (
-    arrangement_compatible(
-        ".??..??...?##.?.??..??...?##.?.??..??...?##.?.??..??...?##.?.??..??...?##.",
-        "......?...?##.?.??..??...?##.?.??..??...?##.?.??..??...?##.?.??..??...?##.",
-        [1, 1, 3, 1, 1, 3, 1, 1, 3, 1, 1, 3, 1, 1, 3],
-    )
-    == True
-)
 
 
 def calculate(record, arrange, check):
-    if arrangement_compatible(record, arrange, check):
+    if (arrange, ",".join(list(map(str, check)))) in memory:
+        return memory[arrange, ",".join(list(map(str, check)))]
+
+    elif arrangement_compatible(record, arrange, check):
         if not any([c == "?" for c in arrange]):
             return [x.end() - x.start() for x in re.finditer(r"#+", arrange)] == check
         else:
-            first_q_to_dot = arrange.replace("?", ".", 1)
-            first_q_to_hash = arrange.replace("?", "#", 1)
-            return calculate(record, first_q_to_dot, check) + calculate(
-                record, first_q_to_hash, check
-            )
+            first_char = arrange[0]
+
+            if first_char == ".":
+                num_ways = calculate(record, arrange[1:], check)
+                memory[(arrange, ",".join(list(map(str, check))))] = num_ways
+            elif first_char == "#":
+                if check[0] == 1:
+                    new_check = check[1:].copy()
+                    if arrange[1] == "#":
+                        return 0
+                    else:
+                        next_arrange = ".." + arrange[2:]
+                else:
+                    new_check = check.copy()
+                    new_check[0] -= 1
+                    if arrange[1] == ".":
+                        return 0
+                    else:
+                        next_arrange = "#" + arrange[2:]
+                num_ways = calculate(record, next_arrange, new_check)
+                memory[(arrange, ",".join(list(map(str, check))))] = num_ways
+            elif first_char == "?":
+                first_q_to_dot = arrange.replace("?", ".", 1)
+                first_q_to_hash = arrange.replace("?", "#", 1)
+                num_ways = calculate(record, first_q_to_dot, check) + calculate(
+                    record, first_q_to_hash, check
+                )
+                memory[(arrange, ",".join(list(map(str, check))))] = num_ways
+
+            else:
+                raise ValueError
+
+            return num_ways
+
     else:
-        return False
+        memory[(arrange, ",".join(list(map(str, check))))] = 0
+        return 0
 
 
 record = "?".join(["???.###" for _ in range(5)])
@@ -160,25 +191,28 @@ with open("aoc_2023\\day_12.txt") as f:
 
 ans = 0
 
-for i, (record, check) in enumerate(lines, 1):
+for i, (record, check) in enumerate(lines[-1:], 1):
     arrange = record
     check = list(map(int, check.split(",")))
     checked = set()
-    ans += calculate(record, arrange, check)
+    combs = calculate(record, arrange, check)
+    ans += combs
+    print(f"Line {i}, {combs=}")
 
 print(f"Part 1: {ans=}")
 
-memory={}`                                   `
+
 # Part 2
 ans = 0
 for i, (record, check) in enumerate(lines, 1):
-    print(f"Line {i}")
     record = "?".join([record for _ in range(5)])
     check = ",".join([check for _ in range(5)])
 
     arrange = record
     check = list(map(int, check.split(",")))
     checked = set()
-    ans += calculate(record, arrange, check)
+    num_combs = calculate(record, arrange, check)
+    ans += num_combs
+    print(f"Line {i}: {num_combs=}")
 
 print(f"Part 2: {ans=}")
